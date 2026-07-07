@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     openaiApiKey: '',
-    openaiModel: 'gpt-5.4-mini',
+    openaiModel: 'gpt-4.1-mini',
     supabaseSecretKey: '',
     supabaseDatabaseUrl: '',
     sessionSecret: '',

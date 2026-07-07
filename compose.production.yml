@@ -69,7 +69,10 @@ services:
       - /app/supabase/.temp:size=8m,mode=0700
     cap_drop: ["ALL"]
     security_opt: ["no-new-privileges:true"]
-    networks: [careguide]
+    # The managed Supabase database currently resolves over IPv6. The VPS host
+    # has IPv6 routing, while Docker's isolated bridge does not; this one-shot
+    # container therefore shares only the host network during migrations.
+    network_mode: host
 
 networks:
   careguide:

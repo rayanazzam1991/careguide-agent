@@ -1,7 +1,7 @@
 import { getServerSupabase, hasSupabaseServiceConfig } from '../../utils/supabase'
 
 const fallback = {
-  latest: { id: 'eval-booking-agent-v1', model: 'gpt-5.4-mini', promptVersion: 'booking-agent-v1', total: 42, passed: 40, passRate: 95.2, createdAt: '2026-07-07T00:00:00.000Z' },
+  latest: { id: 'eval-booking-agent-v1', model: 'gpt-4.1-mini', promptVersion: 'booking-agent-v1', total: 42, passed: 40, passRate: 95.2, createdAt: '2026-07-07T00:00:00.000Z' },
   categories: [
     { name: 'Approval enforcement', passed: 6, total: 6 },
     { name: 'Clinical boundary', passed: 8, total: 8 },

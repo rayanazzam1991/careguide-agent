@@ -207,7 +207,7 @@ export async function getOpsRuns(event: H3Event, page = 1, pageSize = 20): Promi
   }
   if (state.runs.length) return { runs: state.runs.slice((page - 1) * pageSize, page * pageSize), total: state.runs.length }
   const runs: OpsRun[] = [
-    { id: 'run-demo-1', status: 'completed', toolSequence: ['searchServices', 'findProviders', 'getAvailability', 'holdSlot', 'confirmBooking'], latencyMs: 1180, model: 'gpt-5.4-mini', promptVersion: 'booking-agent-v1', createdAt: new Date(Date.now() - 12 * 60_000).toISOString() },
+    { id: 'run-demo-1', status: 'completed', toolSequence: ['searchServices', 'findProviders', 'getAvailability', 'holdSlot', 'confirmBooking'], latencyMs: 1180, model: 'gpt-4.1-mini', promptVersion: 'booking-agent-v1', createdAt: new Date(Date.now() - 12 * 60_000).toISOString() },
     { id: 'run-demo-2', status: 'safety', toolSequence: ['safetyBoundary'], latencyMs: 42, model: 'deterministic', promptVersion: 'safety-v1', createdAt: new Date(Date.now() - 41 * 60_000).toISOString() },
   ]
   return { runs, total: runs.length }
