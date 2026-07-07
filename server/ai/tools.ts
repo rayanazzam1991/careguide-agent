@@ -9,7 +9,7 @@ export function createBookingTools(event: H3Event, sessionHash: string) {
     searchServices: tool({
       description: 'Search the approved CareGuide service catalog. Use before recommending a service.',
       strict: true,
-      inputSchema: z.object({ query: z.string().max(120).default('') }),
+      inputSchema: z.object({ query: z.string().max(120) }),
       execute: async ({ query }) => ({ services: await searchServices(event, query) }),
     }),
     searchHelpContent: tool({
@@ -21,8 +21,8 @@ export function createBookingTools(event: H3Event, sessionHash: string) {
     findProviders: tool({
       description: 'Find fictional providers for a selected service and optional modality.',
       strict: true,
-      inputSchema: z.object({ serviceId: z.string(), modality: z.enum(['online', 'in-person']).optional() }),
-      execute: async ({ serviceId, modality }) => ({ providers: await findProviders(event, serviceId, modality) }),
+      inputSchema: z.object({ serviceId: z.string(), modality: z.enum(['online', 'in-person']).nullable() }),
+      execute: async ({ serviceId, modality }) => ({ providers: await findProviders(event, serviceId, modality ?? undefined) }),
     }),
     getAvailability: tool({
       description: 'Get current fictional availability for selected providers and service.',
@@ -39,7 +39,7 @@ export function createBookingTools(event: H3Event, sessionHash: string) {
     releaseSlot: tool({
       description: 'Release active holds when the user changes their mind.',
       strict: true,
-      inputSchema: z.object({ reason: z.string().max(120).optional() }),
+      inputSchema: z.object({ reason: z.string().max(120).nullable() }),
       execute: async () => {
         await releaseSessionHolds(event, sessionHash)
         return { released: true }
@@ -49,8 +49,8 @@ export function createBookingTools(event: H3Event, sessionHash: string) {
       description: 'Confirm an active slot hold. This always requires explicit user approval.',
       strict: true,
       needsApproval: true,
-      inputSchema: z.object({ holdId: z.string(), idempotencyKey: z.string().default(() => randomUUID()) }),
-      execute: async ({ holdId, idempotencyKey }) => await confirmBooking(event, sessionHash, holdId, idempotencyKey),
+      inputSchema: z.object({ holdId: z.string() }),
+      execute: async ({ holdId }) => await confirmBooking(event, sessionHash, holdId, randomUUID()),
     }),
     requestHandoff: tool({
       description: 'Create a fictional human-support handoff for operational help or clinical-boundary questions.',
