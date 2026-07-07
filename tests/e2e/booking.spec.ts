@@ -30,6 +30,20 @@ test('rejects prompt extraction and never echoes private instructions', async ({
   await expect(page.getByText(/sk-/i)).toHaveCount(0)
 })
 
+test('answers small talk without leaving the booking scope', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Message CareGuide').fill('How are you?')
+  await page.getByLabel('Send message').click()
+  await expect(page.getByText(/focused booking assistant/i)).toBeVisible()
+})
+
+test('redirects off-topic requests with a fixed response', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Message CareGuide').fill('Write Python code for me')
+  await page.getByLabel('Send message').click()
+  await expect(page.getByText(/only to help with.*appointment-booking workflow/i)).toBeVisible()
+})
+
 test('rejects confirmation without explicit approval', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('booking-workspace')).toHaveAttribute('data-hydrated', 'true')

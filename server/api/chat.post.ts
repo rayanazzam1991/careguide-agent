@@ -4,7 +4,7 @@ import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 
 import { z } from 'zod'
 import { createBookingTools } from '../ai/tools'
 import { BOOKING_AGENT_PROMPT } from '../ai/prompt'
-import { detectSafetyBoundary, safetyMessage } from '../utils/safety'
+import { detectDeterministicGuardrail, detectSafetyBoundary, deterministicGuardrailMessage, safetyMessage } from '../utils/safety'
 import { ensureDemoSession, hashIdentity } from '../utils/session'
 import { recordRun, recordSafetyEvent } from '../utils/repository'
 import { staticAssistantResponse } from '../utils/stream'
@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
   const messages = parsed.data.messages as UIMessage[]
   const latestText = lastUserText(messages)
   const boundary = detectSafetyBoundary(latestText)
+  const deterministicGuardrail = boundary ? null : detectDeterministicGuardrail(latestText)
   const config = getCareGuideConfig(event)
   const { hash: sessionHash } = ensureDemoSession(event)
 
@@ -43,6 +44,11 @@ export default defineEventHandler(async (event) => {
     await recordSafetyEvent(event, sessionHash, boundary)
     await recordRun(event, { id: randomUUID(), status: 'safety', toolSequence: ['safetyBoundary'], latencyMs: Date.now() - startedAt, model: 'deterministic', promptVersion: 'safety-v1', createdAt: new Date().toISOString() }, sessionHash)
     return staticAssistantResponse(safetyMessage(boundary))
+  }
+
+  if (deterministicGuardrail) {
+    await recordRun(event, { id: randomUUID(), status: 'completed', toolSequence: [`guardrail:${deterministicGuardrail}`], latencyMs: Date.now() - startedAt, model: 'deterministic', promptVersion: 'guardrail-v1', createdAt: new Date().toISOString() }, sessionHash)
+    return staticAssistantResponse(deterministicGuardrailMessage(deterministicGuardrail))
   }
 
   if (!config.openaiApiKey) {
