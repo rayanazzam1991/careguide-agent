@@ -10,6 +10,8 @@ export default defineNuxtConfig({
     supabaseDatabaseUrl: '',
     sessionSecret: '',
     hashingSalt: '',
+    authUsername: '',
+    authPassword: '',
     promptVersion: 'booking-agent-v1',
     workerToken: '',
     public: {

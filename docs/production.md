@@ -24,6 +24,8 @@ NUXT_OPENAI_API_KEY="SERVER_ONLY_SECRET"
 NUXT_OPENAI_MODEL="gpt-5.4-mini"
 NUXT_SESSION_SECRET="AT_LEAST_32_RANDOM_BYTES"
 NUXT_HASHING_SALT="AT_LEAST_32_RANDOM_BYTES"
+NUXT_AUTH_USERNAME="admin"
+NUXT_AUTH_PASSWORD="A_LONG_RANDOM_SERVER_ONLY_PASSWORD"
 NUXT_PROMPT_VERSION="booking-agent-v1"
 SUPABASE_DATABASE_URL="postgresql://postgres.PROJECT:PASSWORD@POOLER:5432/postgres"
 SUPABASE_BACKUP_CONFIRMED="true"
@@ -32,6 +34,8 @@ SUPABASE_SECRET_KEY="SERVER_ONLY_SECRET"
 ```
 
 Do not print the file, use `docker compose config` without `--quiet`, place secrets in shell history, or store them in GitHub artifacts. Rotate OpenAI, Supabase, and signing secrets after suspected exposure. Rotating the session secret intentionally invalidates all demo sessions.
+
+The login credentials are verified only by the Nuxt server. Keep them in the untracked production environment file and never expose them through `NUXT_PUBLIC_*` variables.
 
 ## Release
 

@@ -1,7 +1,7 @@
 import { getCareGuideConfig } from '../utils/config'
 
 const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
-const JSON_BODY_ROUTES = new Set(['/api/chat', '/api/feedback', '/api/demo/hold', '/api/demo/confirm'])
+const JSON_BODY_ROUTES = new Set(['/api/chat', '/api/feedback', '/api/demo/hold', '/api/demo/confirm', '/api/auth/login'])
 
 export default defineEventHandler((event) => {
   setResponseHeaders(event, {

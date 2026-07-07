@@ -7,6 +7,8 @@ export interface CareGuideRuntimeConfig {
   supabaseDatabaseUrl: string
   sessionSecret: string
   hashingSalt: string
+  authUsername: string
+  authPassword: string
   promptVersion: string
   workerToken: string
   public: {

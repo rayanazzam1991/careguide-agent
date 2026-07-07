@@ -99,6 +99,17 @@ corepack pnpm exec supabase gen types typescript --project-id your-project-ref >
 
 Review pulled and generated changes before committing. `NUXT_PUBLIC_*` values are exposed to browsers, so they must never contain service-role keys, secret keys, database passwords, or access tokens. RLS and RPC boundaries protect access made with the publishable key.
 
+### Login-only access
+
+The application has no sign-up, password-reset, or account-management UI. Configure its one credential pair as server-only environment variables:
+
+```dotenv
+NUXT_AUTH_USERNAME="admin"
+NUXT_AUTH_PASSWORD="a-long-random-password"
+```
+
+Nuxt verifies these values only on the server with constant-time comparisons and issues a signed, HTTP-only session cookie. Never prefix either variable with `NUXT_PUBLIC_`, and keep the production environment file untracked with mode `600`. Restart Nuxt after changing the environment. When either auth variable is empty, authentication is intentionally disabled for local tests; when both are set, all pages and non-health APIs require a valid session.
+
 ## Architecture
 
 ```mermaid
