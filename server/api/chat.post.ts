@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
         store: false,
         parallelToolCalls: false,
         reasoningEffort: 'low',
-        textVerbosity: 'low',
+        textVerbosity: 'medium',
         safetyIdentifier: sessionHash,
       } satisfies OpenAIResponsesProviderOptions,
     },
