@@ -1,0 +1,15 @@
+.git
+.github
+.nuxt
+.output
+node_modules
+.env
+.env.*
+!.env.example
+coverage
+playwright-report
+test-results
+supabase/.branches
+supabase/.temp
+*.log
+.DS_Store

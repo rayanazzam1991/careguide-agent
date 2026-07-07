@@ -1,0 +1,49 @@
+{
+  "name": "careguide",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "pnpm run build:app && pnpm run build:worker",
+    "build:app": "nuxt build",
+    "build:worker": "esbuild worker/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=.output/worker/index.mjs",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "eval:fixtures": "tsx scripts/eval-fixtures.ts",
+    "eval:live": "tsx scripts/eval-live.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "4.0.8",
+    "@ai-sdk/vue": "4.0.16",
+    "@supabase/supabase-js": "2.110.0",
+    "ai": "7.0.16",
+    "nuxt": "4.4.8",
+    "vue": "3.5.39",
+    "vue-router": "5.1.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "1.16.0",
+    "@nuxt/test-utils": "4.0.3",
+    "@playwright/test": "1.61.1",
+    "@types/node": "26.1.0",
+    "@vue/test-utils": "2.4.6",
+    "esbuild": "0.27.4",
+    "eslint": "10.0.3",
+    "supabase": "2.109.0",
+    "tsx": "4.23.0",
+    "typescript": "5.9.3",
+    "vue-tsc": "3.3.6",
+    "vitest": "4.1.10"
+  }
+}
