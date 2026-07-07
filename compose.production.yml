@@ -62,6 +62,8 @@ services:
       target: tooling
     env_file:
       - ${ENV_FILE:-.env.production}
+    environment:
+      HOME: /tmp
     restart: "no"
     read_only: true
     tmpfs:
