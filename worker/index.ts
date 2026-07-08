@@ -46,6 +46,7 @@ async function processBatch(): Promise<void> {
     }
   }
   await supabase.rpc('cleanup_careguide_data')
+  await supabase.rpc('purge_expired_login_events')
 }
 
 async function run(): Promise<void> {

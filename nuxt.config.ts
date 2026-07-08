@@ -12,6 +12,7 @@ export default defineNuxtConfig({
     hashingSalt: '',
     authUsername: '',
     authPassword: '',
+    loginAlertWebhookUrl: '',
     promptVersion: 'booking-agent-v1',
     workerToken: '',
     public: {
@@ -29,6 +30,7 @@ export default defineNuxtConfig({
     routeRules: {
       '/api/chat': { cors: false },
       '/api/ops/**': { cache: { maxAge: 15 } },
+      '/api/access/**': { cache: false },
     },
   },
   app: {

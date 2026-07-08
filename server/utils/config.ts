@@ -9,6 +9,7 @@ export interface CareGuideRuntimeConfig {
   hashingSalt: string
   authUsername: string
   authPassword: string
+  loginAlertWebhookUrl: string
   promptVersion: string
   workerToken: string
   public: {

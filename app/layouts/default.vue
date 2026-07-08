@@ -10,6 +10,7 @@
       <nav aria-label="Primary navigation">
         <NuxtLink to="/">Book</NuxtLink>
         <NuxtLink to="/ops">Agent health</NuxtLink>
+        <NuxtLink to="/access">Access</NuxtLink>
         <NuxtLink to="/case-study">Case study</NuxtLink>
       </nav>
       <div class="header-actions">

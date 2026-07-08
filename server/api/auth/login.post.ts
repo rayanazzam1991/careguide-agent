@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { credentialsMatch, isAuthEnabled, setAuthSession } from '../../utils/auth'
+import { recordSuccessfulLogin } from '../../utils/login-audit'
 
 const attempts = new Map<string, { count: number, resetAt: number }>()
 const MAX_ATTEMPTS = 5
@@ -28,5 +29,6 @@ export default defineEventHandler(async (event) => {
   }
   attempts.delete(clientAddress)
   setAuthSession(event)
+  await recordSuccessfulLogin(event, parsed.data.username)
   return { authenticated: true, username: parsed.data.username }
 })
