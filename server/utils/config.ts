@@ -10,6 +10,9 @@ export interface CareGuideRuntimeConfig {
   authUsername: string
   authPassword: string
   loginAlertWebhookUrl: string
+  loginAlertEmail: string
+  smtpUser: string
+  smtpAppPassword: string
   promptVersion: string
   workerToken: string
   public: {

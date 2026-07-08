@@ -13,6 +13,9 @@ export default defineNuxtConfig({
     authUsername: '',
     authPassword: '',
     loginAlertWebhookUrl: '',
+    loginAlertEmail: '',
+    smtpUser: '',
+    smtpAppPassword: '',
     promptVersion: 'booking-agent-v1',
     workerToken: '',
     public: {

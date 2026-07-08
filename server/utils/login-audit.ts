@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto'
 import type { H3Event } from 'h3'
+import nodemailer from 'nodemailer'
 import { getCareGuideConfig } from './config'
 import { getServerSupabase, hasSupabaseServiceConfig } from './supabase'
 
@@ -75,6 +76,47 @@ async function notifyWebhook(event: H3Event, login: LoginEvent): Promise<void> {
   }
 }
 
+function formatLocation(login: LoginEvent): string {
+  return [login.city, login.region, login.country].filter(Boolean).join(', ') || 'Location unavailable'
+}
+
+async function notifyEmail(event: H3Event, login: LoginEvent): Promise<void> {
+  const config = getCareGuideConfig(event)
+  if (!config.loginAlertEmail || !config.smtpUser || !config.smtpAppPassword) return
+
+  const location = formatLocation(login)
+  const transport = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: config.smtpUser, pass: config.smtpAppPassword.replace(/\s/g, '') },
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 8000,
+  })
+
+  try {
+    await transport.sendMail({
+      from: `CareGuide Alerts <${config.smtpUser}>`,
+      to: config.loginAlertEmail,
+      subject: `CareGuide login from ${login.country || 'an unknown location'}`,
+      text: [
+        'A successful login was recorded for your CareGuide demo.',
+        '',
+        `Time: ${login.occurredAt}`,
+        `Location: ${location}`,
+        `IP address: ${login.ipMasked}`,
+        `Network: ${login.network || 'Unavailable'}`,
+        `Browser and device: ${login.browser} on ${login.device}`,
+        '',
+        'Review access: https://careguide.forvexa.com/access',
+      ].join('\n'),
+    })
+  } catch (error) {
+    console.warn('Login alert email failed', error instanceof Error ? error.message : 'unknown error')
+  } finally {
+    transport.close()
+  }
+}
+
 export async function recordSuccessfulLogin(event: H3Event, username: string): Promise<void> {
   const ip = getClientIp(event)
   const geo = await lookupGeo(ip)
@@ -116,7 +158,7 @@ export async function recordSuccessfulLogin(event: H3Event, username: string): P
     })
     if (error) console.warn('Login audit persistence failed', error.message)
   }
-  await notifyWebhook(event, login)
+  await Promise.all([notifyWebhook(event, login), notifyEmail(event, login)])
 }
 
 export async function listLoginEvents(event: H3Event): Promise<LoginEvent[]> {
