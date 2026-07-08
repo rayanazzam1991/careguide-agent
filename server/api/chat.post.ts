@@ -75,9 +75,14 @@ export default defineEventHandler(async (event) => {
         safetyIdentifier: sessionHash,
       } satisfies OpenAIResponsesProviderOptions,
     },
-    async onFinish({ steps }) {
+    async onFinish({ steps, usage }) {
       const sequence = steps.flatMap(step => step.toolCalls.map(call => call.toolName))
-      await recordRun(event, { id: randomUUID(), status: sequence.includes('requestHandoff') ? 'handoff' : 'completed', toolSequence: sequence, latencyMs: Date.now() - startedAt, model: config.openaiModel, promptVersion: config.promptVersion, createdAt: new Date().toISOString() }, sessionHash)
+      await recordRun(event, {
+        id: randomUUID(), status: sequence.includes('requestHandoff') ? 'handoff' : 'completed', toolSequence: sequence,
+        latencyMs: Date.now() - startedAt, model: config.openaiModel, promptVersion: config.promptVersion,
+        inputTokens: usage.inputTokens, cachedInputTokens: usage.inputTokenDetails.cacheReadTokens,
+        outputTokens: usage.outputTokens, createdAt: new Date().toISOString(),
+      }, sessionHash)
     },
   })
 

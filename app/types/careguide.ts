@@ -56,6 +56,8 @@ export interface OpsSummary {
   evalPassRate: number
   workerHealthy: boolean
   activeSessions: number
+  totalTokens: number
+  estimatedCostUsd: number
 }
 
 export interface OpsRun {
@@ -66,4 +68,8 @@ export interface OpsRun {
   model: string
   promptVersion: string
   createdAt: string
+  inputTokens?: number
+  cachedInputTokens?: number
+  outputTokens?: number
+  estimatedCostUsd?: number | null
 }

@@ -4,6 +4,7 @@ import type { BookingConfirmation, OpsRun, OpsSummary, SlotHold } from '../../ap
 import type { SafetyBoundary } from './safety'
 import { helpArticles, locations, makeAvailability, providers, services } from './catalog'
 import { getServerSupabase, hasSupabaseConfig, hasSupabaseServiceConfig } from './supabase'
+import { estimateLlmCostUsd } from './llm-cost'
 
 interface DemoState {
   holds: Map<string, SlotHold & { sessionHash: string }>
@@ -133,7 +134,8 @@ export async function recordSafetyEvent(event: H3Event, sessionHash: string, bou
 }
 
 export async function recordRun(event: H3Event, run: OpsRun, sessionHash?: string): Promise<void> {
-  state.runs.unshift(run)
+  const costedRun = { ...run, estimatedCostUsd: estimateLlmCostUsd(run.model, run) }
+  state.runs.unshift(costedRun)
   state.runs = state.runs.slice(0, 100)
   if (hasSupabaseServiceConfig(event)) {
     const client = getServerSupabase(event)
@@ -146,6 +148,9 @@ export async function recordRun(event: H3Event, run: OpsRun, sessionHash?: strin
       latency_ms: run.latencyMs,
       model: run.model,
       prompt_version: run.promptVersion,
+      input_tokens: run.inputTokens ?? null,
+      cached_input_tokens: run.cachedInputTokens ?? null,
+      output_tokens: run.outputTokens ?? null,
       created_at: run.createdAt,
     })
   }
@@ -163,7 +168,7 @@ export async function getOpsSummary(event: H3Event): Promise<OpsSummary> {
   if (hasSupabaseServiceConfig(event)) {
     const client = getServerSupabase(event)
     const [runsResult, handoffsResult, safetyResult, sessionsResult, heartbeatResult, evalResult] = await Promise.all([
-      client.from('agent_runs').select('status,latency_ms').order('created_at', { ascending: false }).limit(500),
+      client.from('agent_runs').select('status,latency_ms,model,input_tokens,cached_input_tokens,output_tokens').order('created_at', { ascending: false }).limit(500),
       client.from('handoffs').select('*', { count: 'exact', head: true }),
       client.from('safety_events').select('*', { count: 'exact', head: true }),
       client.from('demo_sessions').select('*', { count: 'exact', head: true }).gt('expires_at', new Date().toISOString()),
@@ -177,6 +182,8 @@ export async function getOpsSummary(event: H3Event): Promise<OpsSummary> {
       const latencies = runs.map(run => run.latency_ms).sort((a, b) => a - b)
       const p95 = latencies.length ? latencies[Math.min(latencies.length - 1, Math.ceil(latencies.length * 0.95) - 1)]! : 0
       const heartbeatAt = heartbeatResult.data?.heartbeat_at
+      const totalTokens = runs.reduce((sum, run) => sum + (run.input_tokens ?? 0) + (run.output_tokens ?? 0), 0)
+      const estimatedCostUsd = runs.reduce((sum, run) => sum + (estimateLlmCostUsd(run.model, { inputTokens: run.input_tokens ?? undefined, cachedInputTokens: run.cached_input_tokens ?? undefined, outputTokens: run.output_tokens ?? undefined }) ?? 0), 0)
       return {
         completionRate: Math.round((completed / total) * 100),
         handoffRate: Math.round(((handoffsResult.count ?? 0) / total) * 100),
@@ -186,23 +193,28 @@ export async function getOpsSummary(event: H3Event): Promise<OpsSummary> {
         evalPassRate: evalResult.data?.total ? Math.round((evalResult.data.passed / evalResult.data.total) * 1000) / 10 : 0,
         workerHealthy: Boolean(heartbeatAt && Date.now() - new Date(heartbeatAt).getTime() < 90_000),
         activeSessions: sessionsResult.count ?? 0,
+        totalTokens,
+        estimatedCostUsd,
       }
     }
   }
   const total = Math.max(state.runs.length, 1)
   const completed = state.runs.filter(run => run.status === 'completed').length
-  return { completionRate: Math.round((completed / total) * 100), handoffRate: Math.round((state.handoffs / total) * 100), safetyEvents: state.safetyEvents, p95LatencyMs: state.runs.length ? Math.max(...state.runs.map(run => run.latencyMs)) : 820, toolSuccessRate: 98.6, evalPassRate: 95.2, workerHealthy: true, activeSessions: state.holds.size }
+  return { completionRate: Math.round((completed / total) * 100), handoffRate: Math.round((state.handoffs / total) * 100), safetyEvents: state.safetyEvents, p95LatencyMs: state.runs.length ? Math.max(...state.runs.map(run => run.latencyMs)) : 820, toolSuccessRate: 98.6, evalPassRate: 95.2, workerHealthy: true, activeSessions: state.holds.size, totalTokens: state.runs.reduce((sum, run) => sum + (run.inputTokens ?? 0) + (run.outputTokens ?? 0), 0), estimatedCostUsd: state.runs.reduce((sum, run) => sum + (run.estimatedCostUsd ?? 0), 0) }
 }
 
 export async function getOpsRuns(event: H3Event, page = 1, pageSize = 20): Promise<{ runs: OpsRun[], total: number }> {
   if (hasSupabaseServiceConfig(event)) {
     const from = (page - 1) * pageSize
     const { data, error, count } = await getServerSupabase(event).from('agent_runs')
-      .select('id,status,tool_sequence,latency_ms,model,prompt_version,created_at', { count: 'exact' })
+      .select('id,status,tool_sequence,latency_ms,model,prompt_version,input_tokens,cached_input_tokens,output_tokens,created_at', { count: 'exact' })
       .order('created_at', { ascending: false }).range(from, from + pageSize - 1)
     if (!error && data) return {
       total: count ?? data.length,
-      runs: data.map(run => ({ id: run.id, status: run.status, toolSequence: run.tool_sequence, latencyMs: run.latency_ms, model: run.model, promptVersion: run.prompt_version, createdAt: run.created_at })) as OpsRun[],
+      runs: data.map(run => {
+        const usage = { inputTokens: run.input_tokens ?? undefined, cachedInputTokens: run.cached_input_tokens ?? undefined, outputTokens: run.output_tokens ?? undefined }
+        return { id: run.id, status: run.status, toolSequence: run.tool_sequence, latencyMs: run.latency_ms, model: run.model, promptVersion: run.prompt_version, ...usage, estimatedCostUsd: estimateLlmCostUsd(run.model, usage), createdAt: run.created_at }
+      }) as OpsRun[],
     }
   }
   if (state.runs.length) return { runs: state.runs.slice((page - 1) * pageSize, page * pageSize), total: state.runs.length }
