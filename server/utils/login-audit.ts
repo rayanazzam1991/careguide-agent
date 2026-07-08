@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer'
 import { getCareGuideConfig } from './config'
 import { getServerSupabase, hasSupabaseServiceConfig } from './supabase'
 
-export interface LoginEvent {
+interface LoginEvent {
   id: string
   username: string
   occurredAt: string
@@ -17,7 +17,6 @@ export interface LoginEvent {
   network: string | null
   browser: string
   device: string
-  acknowledgedAt: string | null
 }
 
 interface GeoResult {
@@ -29,8 +28,6 @@ interface GeoResult {
   timezone?: { id?: string }
   connection?: { org?: string, isp?: string }
 }
-
-const memoryEvents: LoginEvent[] = []
 
 export function maskIp(ip: string): string {
   if (!ip || ip === 'unknown') return 'unknown'
@@ -106,8 +103,6 @@ async function notifyEmail(event: H3Event, login: LoginEvent): Promise<void> {
         `IP address: ${login.ipMasked}`,
         `Network: ${login.network || 'Unavailable'}`,
         `Browser and device: ${login.browser} on ${login.device}`,
-        '',
-        'Review access: https://careguide.forvexa.com/access',
       ].join('\n'),
     })
   } catch (error) {
@@ -134,11 +129,8 @@ export async function recordSuccessfulLogin(event: H3Event, username: string): P
     network: geo?.success === false ? null : geo?.connection?.org ?? geo?.connection?.isp ?? null,
     browser: agent.browser,
     device: agent.device,
-    acknowledgedAt: null,
   }
 
-  memoryEvents.unshift(login)
-  memoryEvents.splice(100)
   if (hasSupabaseServiceConfig(event)) {
     const config = getCareGuideConfig(event)
     const { error } = await getServerSupabase(event).from('login_events').insert({
@@ -159,35 +151,4 @@ export async function recordSuccessfulLogin(event: H3Event, username: string): P
     if (error) console.warn('Login audit persistence failed', error.message)
   }
   await Promise.all([notifyWebhook(event, login), notifyEmail(event, login)])
-}
-
-export async function listLoginEvents(event: H3Event): Promise<LoginEvent[]> {
-  if (hasSupabaseServiceConfig(event)) {
-    const { data, error } = await getServerSupabase(event).from('login_events').select('id,username,occurred_at,ip_masked,country,country_code,region,city,timezone,network,browser,device,acknowledged_at').order('occurred_at', { ascending: false }).limit(100)
-    if (!error && data) return data.map(row => ({
-      id: row.id,
-      username: row.username,
-      occurredAt: row.occurred_at,
-      ipMasked: row.ip_masked,
-      country: row.country,
-      countryCode: row.country_code,
-      region: row.region,
-      city: row.city,
-      timezone: row.timezone,
-      network: row.network,
-      browser: row.browser,
-      device: row.device,
-      acknowledgedAt: row.acknowledged_at,
-    }))
-  }
-  return memoryEvents
-}
-
-export async function acknowledgeLoginEvents(event: H3Event): Promise<void> {
-  const acknowledgedAt = new Date().toISOString()
-  memoryEvents.forEach(item => { item.acknowledgedAt ??= acknowledgedAt })
-  if (hasSupabaseServiceConfig(event)) {
-    const { error } = await getServerSupabase(event).from('login_events').update({ acknowledged_at: acknowledgedAt }).is('acknowledged_at', null)
-    if (error) throw createError({ statusCode: 500, statusMessage: 'Could not acknowledge login events' })
-  }
 }
